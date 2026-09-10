@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NBA Finals 2026 - Player Performance Tracker</title>
+  <!-- Tailwind CSS & Alpine.js -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    /* Dark Aesthetic Top-View Basketball Court Background */
+    .court-bg {
+      background-color: #12161f;
+      background-image: 
+        radial-gradient(circle at center, rgba(30, 41, 59, 0.4) 0%, rgba(10, 14, 23, 0.95) 100%),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 562.5' width='100%25' height='100%25'%3E%3Cdefs%3E%3ClinearGradient id='wood' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%231e2638' stop-opacity='0.6'/%3E%3Cstop offset='100%25' stop-color='%23111726' stop-opacity='0.8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='1000' height='562.5' fill='url(%23wood)'/%3E%3C!-- Court Outer Boundary --%3E%3Crect x='40' y='30' width='920' height='502.5' fill='none' stroke='%23334155' stroke-width='3' stroke-opacity='0.4'/%3E%3C!-- Half Court Line --%3E%3Cline x1='500' y1='30' x2='500' y2='532.5' stroke='%23334155' stroke-width='3' stroke-opacity='0.4'/%3E%3C!-- Center Circle --%3E%3Ccircle cx='500' cy='281.25' r='60' fill='none' stroke='%23334155' stroke-width='3' stroke-opacity='0.4'/%3E%3C!-- Left Key / Paint --%3E%3Crect x='40' y='191.25' width='190' height='180' fill='%23182030' fill-opacity='0.5' stroke='%23334155' stroke-width='3' stroke-opacity='0.4'/%3E%3Cpath d='M 230 211.25 A 70 70 0 0 1 230 351.25' fill='none' stroke='%23334155' stroke-width='3' stroke-opacity='0.4'/%3E%3C!-- Left 3-Point Arc --%3E%3Cpath d='M 40 70 L 140 70 A 237.5 237.5 0 0 1 140 492.5 L 40 492.5' fill='none' stroke='%23334155' stroke-width='3' stroke-opacity='0.3'/%3E%3C!-- Right Key / Paint --%3E%3Crect x='770' y='191.25' width='190' height='180' fill='%23182030' fill-opacity='0.5' stroke='%23334155' stroke-width='3' stroke-opacity='0.4'/%3E%3Cpath d='M 770 211.25 A 70 70 0 0 0 770 351.25' fill='none' stroke='%23334155' stroke-width='3' stroke-opacity='0.4'/%3E%3C!-- Right 3-Point Arc --%3E%3Cpath d='M 960 70 L 860 70 A 237.5 237.5 0 0 0 860 492.5 L 960 492.5' fill='none' stroke='%23334155' stroke-width='3' stroke-opacity='0.3'/%3E%3C/svg%3E");
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+    }
+  </style>
+</head>
+<body class="court-bg text-slate-200 antialiased min-h-screen flex flex-col justify-between selection:bg-amber-500 selection:text-slate-950">
+
+  <!-- Application Container -->
+  <div x-data="trackerApp()" class="container mx-auto px-4 py-8 max-w-6xl">
+    
+    <!-- Top Header -->
+    <header class="flex flex-col md:flex-row md:items-center md:justify-between pb-6 mb-6 border-b border-slate-700/50 backdrop-blur-md bg-slate-900/60 p-6 rounded-2xl border border-slate-800 shadow-2xl gap-4">
+      <div class="flex items-center gap-4">
+        <!-- Finals 2026 Badge -->
+        <div class="bg-gradient-to-br from-amber-400 to-amber-600 text-slate-950 font-black px-3 py-1.5 rounded-lg text-xs tracking-wider uppercase shadow-lg shadow-amber-500/20">
+          Finals 2026
+        </div>
+        <div>
+          <h1 class="text-xl md:text-2xl font-extrabold tracking-tight text-white uppercase">NBA Player Performance Tracker</h1>
+          <p class="text-xs text-slate-400 mt-0.5">20-Day Championship Prep • Auto-Saved</p>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex items-center gap-3 flex-wrap">
+        <button @click="fillZeros()" class="text-xs font-semibold px-3.5 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 transition border border-slate-700">
+          Fill Blanks (0)
+        </button>
+        <button @click="resetData()" class="text-xs font-semibold px-3.5 py-2 rounded-xl bg-rose-950/60 hover:bg-rose-900 text-rose-300 transition border border-rose-800/60">
+          Reset All
+        </button>
+        <button @click="exportCSV()" class="text-xs font-bold px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 transition shadow-lg shadow-amber-500/10">
+          Export CSV
+        </button>
+      </div>
+    </header>
+
+    <!-- Navigation Bar: Days Tabs -->
+    <nav class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2 mb-6">
+      <button 
+        @click="activeDay = 'all'"
+        :class="activeDay === 'all' ? 'bg-amber-500 text-slate-950 font-bold shadow-lg shadow-amber-500/20' : 'bg-slate-900/70 text-slate-400 hover:bg-slate-800 border border-slate-800'"
+        class="px-4 py-2.5 text-xs font-semibold rounded-xl transition whitespace-nowrap backdrop-blur-md">
+        Summary (All Days)
+      </button>
+
+      <template x-for="day in 20" :key="day">
+        <button 
+          @click="activeDay = day"
+          :class="activeDay === day ? 'bg-amber-500 text-slate-950 font-bold shadow-lg shadow-amber-500/20' : 'bg-slate-900/70 text-slate-400 hover:bg-slate-800 border border-slate-800'"
+          class="px-3.5 py-2.5 text-xs font-medium rounded-xl transition whitespace-nowrap backdrop-blur-md">
+          Day <span x-text="day"></span>
+        </button>
+      </template>
+    </nav>
+
+    <!-- Main Card View -->
+    <main class="bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-slate-800/80 shadow-2xl overflow-hidden mb-8">
+      
+      <!-- Single Day View -->
+      <div x-show="activeDay !== 'all'" class="p-6">
+        <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-800">
+          <div>
+            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-amber-500 inline-block"></span>
+              <span x-text="`Day ${activeDay} Entry`"></span>
+            </h2>
+            <p class="text-xs text-slate-400 mt-0.5">Input points/stats for Session 1 (S1) and Session 2 (S2)</p>
+          </div>
+          <button @click="addPlayer()" class="text-xs font-bold text-amber-400 hover:text-amber-300 transition flex items-center gap-1">
+            + Add Player
+          </button>
+        </div>
+
+        <div class="space-y-2.5">
+          <template x-for="(player, index) in players" :key="player.id">
+            <div class="flex items-center gap-4 p-3.5 bg-slate-800/40 hover:bg-slate-800/70 rounded-xl border border-slate-800 transition">
+              
+              <!-- Player Name -->
+              <input 
+                type="text" 
+                x-model="player.name" 
+                placeholder="Player Name"
+                class="bg-transparent font-semibold text-white text-sm focus:outline-none border-b border-slate-700 focus:border-amber-400 w-40 py-1"
+              />
+
+              <!-- Session Inputs -->
+              <div class="flex items-center gap-4 flex-1">
+                <div class="flex items-center gap-2">
+                  <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">S1</span>
+                  <input 
+                    type="number" 
+                    min="0"
+                    x-model.number="player.scores[`d${activeDay}_s1`]"
+                    class="w-20 px-3 py-1.5 bg-slate-900/90 border border-slate-700/80 rounded-lg text-sm text-center font-bold text-amber-400 focus:ring-1 focus:ring-amber-400 focus:outline-none"
+                  />
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">S2</span>
+                  <input 
+                    type="number" 
+                    min="0"
+                    x-model.number="player.scores[`d${activeDay}_s2`]"
+                    class="w-20 px-3 py-1.5 bg-slate-900/90 border border-slate-700/80 rounded-lg text-sm text-center font-bold text-amber-400 focus:ring-1 focus:ring-amber-400 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <!-- 20-Day Dynamic Total -->
+              <div class="text-right px-3 border-l border-slate-800">
+                <span class="block text-[9px] uppercase tracking-wider font-bold text-slate-500">20-Day Total</span>
+                <span class="text-base font-extrabold text-white" x-text="calculateTotal(player)"></span>
+              </div>
+
+              <!-- Delete Player -->
+              <button 
+                @click="removePlayer(index)" 
+                title="Remove Player"
+                class="text-slate-600 hover:text-rose-400 transition px-1 text-lg">
+                &times;
+              </button>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <!-- Summary Matrix (All 20 Days) -->
+      <div x-show="activeDay === 'all'" class="p-6 overflow-x-auto">
+        <div class="mb-4">
+          <h2 class="text-lg font-bold text-white">Full Championship Overview</h2>
+          <p class="text-xs text-slate-400">All 40 sessions overview across 20 training days.</p>
+        </div>
+
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="border-b border-slate-800 bg-slate-950/50">
+              <th class="p-3 font-bold text-slate-300 sticky left-0 bg-slate-900 z-10">Player</th>
+              <template x-for="d in 20" :key="d">
+                <th class="p-2 text-center font-bold text-slate-400 border-l border-slate-800/60" colspan="2" x-text="`Day ${d}`"></th>
+              </template>
+              <th class="p-3 text-center font-extrabold text-amber-400 border-l border-slate-700 bg-slate-950/80">Total</th>
+            </tr>
+            <tr class="border-b border-slate-800 bg-slate-950/30 text-[9px] text-slate-500">
+              <th class="p-2 sticky left-0 bg-slate-900 z-10"></th>
+              <template x-for="d in 20" :key="d">
+                <template x-for="s in ['S1', 'S2']" :key="s">
+                  <th class="p-1 text-center font-semibold border-l border-slate-800/40" x-text="s"></th>
+                </template>
+              </template>
+              <th class="p-2 border-l border-slate-700 bg-slate-950/80"></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800/50">
+            <template x-for="player in players" :key="player.id">
+              <tr class="hover:bg-slate-800/30 transition">
+                <td class="p-3 font-semibold text-white sticky left-0 bg-slate-900 z-10 whitespace-nowrap" x-text="player.name || 'Unnamed'"></td>
+                <template x-for="d in 20" :key="d">
+                  <template x-for="s in [1, 2]" :key="s">
+                    <td class="p-2 text-center text-slate-400 border-l border-slate-800/30" x-text="player.scores[`d${d}_s${s}`] || 0"></td>
+                  </template>
+                </template>
+                <td class="p-3 text-center font-extrabold text-amber-400 bg-slate-950/60 border-l border-slate-700" x-text="calculateTotal(player)"></td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-center text-xs text-slate-500 py-2">
+      NBA FINALS 2026 OFFICIAL PLAYER TRACKING MODULE
+    </footer>
+
+  </div>
+
+  <!-- Logic Script with LocalStorage Persistence -->
+  <script>
+    function trackerApp() {
+      return {
+        activeDay: 1,
+        players: [],
+
+        init() {
+          // Load existing data from browser LocalStorage on startup
+          const savedData = localStorage.getItem('nba_finals_2026_tracker');
+          if (savedData) {
+            try {
+              this.players = JSON.parse(savedData);
+            } catch(e) {
+              this.loadDefaultPlayers();
+            }
+          } else {
+            this.loadDefaultPlayers();
+          }
+
+          // Watch for any changes to players array and auto-save
+          this.$watch('players', (newVal) => {
+            localStorage.setItem('nba_finals_2026_tracker', JSON.stringify(newVal));
+          }, { deep: true });
+        },
+
+        loadDefaultPlayers() {
+          this.players = Array.from({ length: 10 }, (_, i) => ({
+            id: Date.now() + i,
+            name: `Player ${i + 1}`,
+            scores: {}
+          }));
+        },
+
+        calculateTotal(player) {
+          let sum = 0;
+          for (let d = 1; d <= 20; d++) {
+            sum += Number(player.scores[`d${d}_s1`]) || 0;
+            sum += Number(player.scores[`d${d}_s2`]) || 0;
+          }
+          return sum;
+        },
+
+        addPlayer() {
+          this.players.push({
+            id: Date.now(),
+            name: `Player ${this.players.length + 1}`,
+            scores: {}
+          });
+        },
+
+        removePlayer(index) {
+          if (this.players.length > 1) {
+            this.players.splice(index, 1);
+          }
+        },
+
+        fillZeros() {
+          this.players.forEach(p => {
+            for (let d = 1; d <= 20; d++) {
+              if (p.scores[`d${d}_s1`] === undefined || p.scores[`d${d}_s1`] === '') p.scores[`d${d}_s1`] = 0;
+              if (p.scores[`d${d}_s2`] === undefined || p.scores[`d${d}_s2`] === '') p.scores[`d${d}_s2`] = 0;
+            }
+          });
+        },
+
+        resetData() {
+          if (confirm("Are you sure you want to reset all player stats? This cannot be undone.")) {
+            localStorage.removeItem('nba_finals_2026_tracker');
+            this.loadDefaultPlayers();
+          }
+        },
+
+        exportCSV() {
+          let headers = ["Player Name"];
+          for (let d = 1; d <= 20; d++) {
+            headers.push(`Day ${d} S1`, `Day ${d} S2`);
+          }
+          headers.push("20-Day Total");
+
+          let rows = [headers.join(",")];
+
+          this.players.forEach(p => {
+            let row = [`"${p.name}"`];
+            for (let d = 1; d <= 20; d++) {
+              row.push(p.scores[`d${d}_s1`] || 0);
+              row.push(p.scores[`d${d}_s2`] || 0);
+            }
+            row.push(this.calculateTotal(p));
+            rows.push(row.join(","));
+          });
+
+          let csvContent = "data:text/csv;charset=utf-8," + rows.join("\n");
+          let encodedUri = encodeURI(csvContent);
+          let link = document.createElement("a");
+          link.setAttribute("href", encodedUri);
+          link.setAttribute("download", "NBA_Finals_2026_Player_Tracker.csv");
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+      }
+    }
+  </script>
+</body>
+</html>
